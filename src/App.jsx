@@ -12,8 +12,7 @@ function App() {
     const scrollTopBtn = document.getElementById('scrollTop');
     const amenitySlides = Array.from(document.querySelectorAll('.amenity-slide'));
     const amenityDots = Array.from(document.querySelectorAll('.adot'));
-    const mbTabs = Array.from(document.querySelectorAll('.mb-tab'));
-    const mbPanels = Array.from(document.querySelectorAll('.mb-panel'));
+    const tabbedContents = Array.from(document.querySelectorAll('.tabbed-content'));
 
     const activeNavOffset = 110;
     const smoothScrollOffset = 95;
@@ -193,23 +192,41 @@ function App() {
       return { dot, handler };
     });
 
-    const tabHandlers = mbTabs.map((tab) => {
-      const handler = () => {
-        const targetId = `panel-${tab.getAttribute('data-tab')}`;
+    const tabLinkHandlers = [];
 
-        mbTabs.forEach((tabButton) => tabButton.classList.remove('active'));
-        mbPanels.forEach((panel) => panel.classList.remove('active'));
+    tabbedContents.forEach((tabbedContent) => {
+      const tabItems = Array.from(tabbedContent.querySelectorAll('.tab'));
+      const panels = Array.from(tabbedContent.querySelectorAll('.tab-panels .panel'));
+      const tabLinks = Array.from(tabbedContent.querySelectorAll('.tab > a[href^="#"]'));
 
-        tab.classList.add('active');
+      tabLinks.forEach((link) => {
+        const handler = (event) => {
+          event.preventDefault();
 
-        const targetPanel = document.getElementById(targetId);
-        if (targetPanel) {
-          targetPanel.classList.add('active');
-        }
-      };
+          const rawHref = link.getAttribute('href');
+          if (!rawHref || rawHref === '#') {
+            return;
+          }
 
-      tab.addEventListener('click', handler);
-      return { tab, handler };
+          const targetId = decodeURIComponent(rawHref.slice(1));
+          if (!targetId) {
+            return;
+          }
+
+          tabItems.forEach((tabItem) => tabItem.classList.remove('active'));
+          panels.forEach((panel) => panel.classList.remove('active'));
+
+          link.closest('.tab')?.classList.add('active');
+
+          const targetPanel = document.getElementById(targetId);
+          if (targetPanel && tabbedContent.contains(targetPanel)) {
+            targetPanel.classList.add('active');
+          }
+        };
+
+        link.addEventListener('click', handler);
+        tabLinkHandlers.push({ link, handler });
+      });
     });
 
     const smoothLinks = Array.from(document.querySelectorAll('a[href^="#"]'));
@@ -218,6 +235,10 @@ function App() {
         const href = link.getAttribute('href');
 
         if (!href || href === '#') {
+          return;
+        }
+
+        if (link.closest('.tabbed-content .nav')) {
           return;
         }
 
@@ -275,8 +296,8 @@ function App() {
         dot.removeEventListener('click', handler);
       });
 
-      tabHandlers.forEach(({ tab, handler }) => {
-        tab.removeEventListener('click', handler);
+      tabLinkHandlers.forEach(({ link, handler }) => {
+        link.removeEventListener('click', handler);
       });
 
       smoothLinkHandlers.forEach(({ link, handler }) => {
